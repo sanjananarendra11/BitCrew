@@ -8,10 +8,6 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# =========================================
-# DEBUG
-# =========================================
-
 print("RUNNING FILE FROM:", os.path.abspath(__file__))
 
 # =========================================
@@ -21,7 +17,6 @@ print("RUNNING FILE FROM:", os.path.abspath(__file__))
 model = pickle.load(open("model.pkl", "rb"))
 scaler = pickle.load(open("scaler.pkl", "rb"))
 
-# MUST MATCH extract_features() EXACTLY (11 FEATURES)
 columns = [
     "url_length",
     "has_ip",
@@ -65,7 +60,7 @@ def predict():
             }), 400
 
         # =========================================
-        # LAYER 1 → URL FEATURE EXTRACTION
+        # LAYER 1 → URL FEATURES
         # =========================================
 
         features = extract_features(url)
@@ -97,19 +92,18 @@ def predict():
         detected_brands = content_data.get("detectedBrands", [])
 
         # =========================================
-        # SMART HYBRID PHISHING SCORE
+        # HYBRID RISK SCORE
         # =========================================
 
         phishing_score = 0
 
-        # Strong URL signals
-        if features[1] == 1:  # IP address
+        if features[1] == 1:
             phishing_score += 40
 
-        if features[7] > 0:  # suspicious URL words
+        if features[7] > 0:
             phishing_score += 30
 
-        if features[10] == 1:  # brand spoof
+        if features[10] == 1:
             phishing_score += 35
 
         if external_form:
@@ -118,8 +112,7 @@ def predict():
         if has_password and features[10] == 1:
             phishing_score += 35
 
-        # Medium signals
-        if features[4] == 0:  # no https
+        if features[4] == 0:
             phishing_score += 10
 
         if redirect_script:
@@ -130,6 +123,15 @@ def predict():
 
         if form_count >= 3:
             phishing_score += 10
+
+        if len(detected_brands) > 0:
+            phishing_score += 10
+
+        if features[6] > 0:
+            phishing_score += 5
+
+        if features[0] > 25:
+            phishing_score += 5
 
         # =========================================
         # FINAL PREDICTION
@@ -148,14 +150,13 @@ def predict():
             confidence = max(100 - risk_score, int((1 - prob) * 100))
 
         # =========================================
-        # LAYER 3 → THREAT TYPE + EXPLAINABILITY
+        # LAYER 3 → THREAT REASONING
         # =========================================
 
         threat_type = "Safe Browsing"
         severity = "Low"
         explanations = []
 
-        # Credential Harvesting
         if has_password and features[10] == 1:
             threat_type = "Credential Harvesting"
             severity = "High"
@@ -167,8 +168,7 @@ def predict():
                 "Brand impersonation detected"
             )
 
-        # OTP / Verification Scam
-        elif features[7] > 0 and content_words >= 3:
+        elif final_pred == "Phishing" and features[7] > 0 and content_words >= 3:
             threat_type = "Account Verification Scam"
             severity = "Medium"
 
@@ -179,7 +179,6 @@ def predict():
                 "Verify / Secure / Login patterns found"
             )
 
-        # Malware Redirect Attack
         elif redirect_script and external_form:
             threat_type = "Malware / Redirect Attack"
             severity = "High"
@@ -191,7 +190,6 @@ def predict():
                 "External suspicious form action found"
             )
 
-        # Financial Phishing
         elif (
             "paypal" in str(detected_brands).lower()
             or "bank" in str(detected_brands).lower()
@@ -203,7 +201,6 @@ def predict():
                 "Financial brand impersonation detected"
             )
 
-        # Generic phishing
         elif final_pred == "Phishing":
             threat_type = "Suspicious Phishing Attempt"
             severity = "Medium"
@@ -212,14 +209,13 @@ def predict():
                 "Multiple phishing indicators detected"
             )
 
-        # Safe browsing
         else:
             explanations.append(
                 "No strong phishing indicators detected"
             )
 
         # =========================================
-        # LAYER 1 DISPLAY DATA
+        # LAYER 1 DISPLAY
         # =========================================
 
         layer1 = {
@@ -302,6 +298,18 @@ def predict():
                 "impact": "+10"
             })
 
+        if features[6] > 0:
+            contributions.append({
+                "name": "Subdomain Depth",
+                "impact": "+5"
+            })
+
+        if features[0] > 25:
+            contributions.append({
+                "name": "Long URL Structure",
+                "impact": "+5"
+            })
+
         # =========================================
         # FINAL RESPONSE
         # =========================================
@@ -331,10 +339,6 @@ def predict():
             "error": str(e)
         }), 500
 
-
-# =========================================
-# RUN SERVER
-# =========================================
 
 if __name__ == "__main__":
     app.run(debug=True)
