@@ -1,11 +1,13 @@
 let currentTabUrl = "";
 
-// Get current tab URL automatically
+// Get current active tab URL
 chrome.tabs.query(
   { active: true, currentWindow: true },
   function (tabs) {
-    currentTabUrl = tabs[0].url;
-    document.getElementById("current-url").innerText = currentTabUrl;
+    if (tabs.length > 0) {
+      currentTabUrl = tabs[0].url || "";
+      document.getElementById("current-url").innerText = currentTabUrl;
+    }
   }
 );
 
@@ -20,19 +22,63 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
   `;
 
   try {
+    // =========================================
+    // STEP 1 → Get current active tab
+    // =========================================
+
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true
+    });
+
+    // =========================================
+    // STEP 2 → Get Layer 3 content data
+    // =========================================
+
+    let pageContent = {
+      hasPasswordField: false,
+      formCount: 0,
+      suspiciousWords: 0,
+      hasExternalFormAction: false,
+      hasRedirectScript: false,
+      detectedBrands: []
+    };
+
+    try {
+      const responseFromContent = await chrome.tabs.sendMessage(
+        tab.id,
+        {
+          action: "getPageContent"
+        }
+      );
+
+      if (responseFromContent) {
+        pageContent = responseFromContent;
+      }
+
+    } catch (err) {
+      console.log("Content script unavailable:", err);
+    }
+
+    console.log("Layer 3 Data:", pageContent);
+
+    // =========================================
+    // STEP 3 → Send URL + content data to Flask
+    // =========================================
+
     const response = await fetch("http://127.0.0.1:5000/predict", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        url: currentTabUrl
+        url: currentTabUrl,
+        content_data: pageContent
       })
     });
 
     const data = await response.json();
 
-    // Handle backend errors
     if (data.error) {
       resultDiv.innerHTML = `
         <div class="error-box">
@@ -42,7 +88,10 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       return;
     }
 
-    // Layer 1 HTML
+    // =========================================
+    // LAYER 1 HTML
+    // =========================================
+
     let layer1HTML = "";
 
     Object.entries(data.layer1).forEach(([key, value]) => {
@@ -54,7 +103,10 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       `;
     });
 
-    // Layer 2 Contributions HTML
+    // =========================================
+    // LAYER 2 HTML
+    // =========================================
+
     let contributionHTML = "";
 
     if (data.layer2.contributions.length === 0) {
@@ -65,16 +117,109 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       `;
     } else {
       data.layer2.contributions.forEach(item => {
-        contributionHTML += `
+      const score = parseInt(item.impact.replace("+", ""));
+
+      contributionHTML += `
+        <div class="contribution-box">
+
+          <div class="contribution-top">
+            <span class="feature-name">${item.name}</span>
+            <span class="feature-score">${item.impact}</span>
+          </div>
+
+          <div class="bar-bg">
+            <div 
+              class="bar-fill"
+              style="width: ${score * 2}px;">
+            </div>
+          </div>
+
+        </div>
+      `;
+    });
+    }
+
+    // =========================================
+    // LAYER 3 HTML
+    // Threat Type + Explainability
+    // =========================================
+
+    let explanationHTML = "";
+
+    if (data.layer3.explanations.length === 0) {
+      explanationHTML = `
+        <p class="safe-note">
+          No strong phishing indicators detected
+        </p>
+      `;
+    } else {
+      data.layer3.explanations.forEach(item => {
+        explanationHTML += `
           <div class="contribution">
-            <span>${item.name}</span>
-            <span class="impact">${item.impact}</span>
+            <span>- ${item}</span>
           </div>
         `;
       });
     }
 
-    // Final UI
+    let layer3HTML = `
+      <div class="prediction ${
+        data.prediction === "Safe" ? "safe" : "phishing"
+      }">
+        ${data.layer3.threat_type}
+      </div>
+
+      <div class="confidence">
+        Severity: ${data.layer3.severity}
+      </div>
+
+      <h3>Why Flagged</h3>
+
+      ${explanationHTML}
+
+      <br>
+
+      <div class="row">
+        <span>Password Field</span>
+        <span>${pageContent.hasPasswordField ? "Yes" : "No"}</span>
+      </div>
+
+      <div class="row">
+        <span>Forms Detected</span>
+        <span>${pageContent.formCount}</span>
+      </div>
+
+      <div class="row">
+        <span>Suspicious Words</span>
+        <span>${pageContent.suspiciousWords}</span>
+      </div>
+
+      <div class="row">
+        <span>External Form Action</span>
+        <span>${pageContent.hasExternalFormAction ? "Yes" : "No"}</span>
+      </div>
+
+      <div class="row">
+        <span>Redirect Script</span>
+        <span>${pageContent.hasRedirectScript ? "Yes" : "No"}</span>
+      </div>
+
+      <div class="row">
+        <span>Detected Brands</span>
+        <span>
+          ${
+            pageContent.detectedBrands.length > 0
+              ? pageContent.detectedBrands.join(", ")
+              : "None"
+          }
+        </span>
+      </div>
+    `;
+
+    // =========================================
+    // FINAL DASHBOARD UI
+    // =========================================
+
     resultDiv.innerHTML = `
       <div class="dashboard">
 
@@ -108,15 +253,23 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
           ${contributionHTML}
         </div>
 
+        <!-- Layer 3 -->
+        <div class="panel">
+          <h2>Layer 3 - Content Analysis + Intent Reasoning</h2>
+
+          ${layer3HTML}
+        </div>
+
       </div>
     `;
 
   } catch (error) {
+    console.error(error);
+
     resultDiv.innerHTML = `
       <div class="error-box">
         Backend connection failed
       </div>
     `;
-    console.error(error);
   }
 });
