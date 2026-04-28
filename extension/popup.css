@@ -195,8 +195,81 @@ button:hover {
   border-radius: 20px;
   background: linear-gradient(
     90deg,
-    #00e5ff,
-    #00ff9d
+    #ff4fd8,
+    #7c4dff,
+    #00e5ff
   );
-  transition: width 0.4s ease;
+  background-size: 200% 200%;
+  animation: gradientMove 3s ease infinite;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 12px rgba(255, 79, 216, 0.4);
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.panel h2 {
+  color: #ffffff;
+  font-size: 18px;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.feature-score {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff4fd8;
+}
+
+/* ========================================
+   CIRCULAR RISK METER
+======================================== */
+
+.risk-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 14px;
+  box-shadow: 0 0 25px rgba(255, 79, 216, 0.2);
+}
+
+.inner-circle {
+  width: 105px;
+  height: 105px;
+  border-radius: 50%;
+  background: #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.risk-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff4fd8;
+  letter-spacing: 1px;
 }

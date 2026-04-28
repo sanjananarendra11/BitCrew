@@ -89,7 +89,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
     }
 
     // =========================================
-    // LAYER 1 HTML
+    // LAYER 1 → Circular Risk Meter
     // =========================================
 
     let layer1HTML = "";
@@ -103,8 +103,68 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       `;
     });
 
+    const riskMeterHTML = `
+      <div class="risk-meter">
+
+        <div
+          class="circle"
+          style="
+            background: conic-gradient(
+              #ff4fd8 ${data.risk_score * 3.6}deg,
+              rgba(255,255,255,0.08) 0deg
+            );
+          "
+        >
+          <div class="inner-circle">
+            ${data.risk_score}%
+          </div>
+        </div>
+
+        <div class="risk-label">
+          ${
+            data.risk_score >= 80
+              ? "CRITICAL RISK"
+              : data.risk_score >= 60
+              ? "HIGH RISK"
+              : data.risk_score >= 30
+              ? "MEDIUM RISK"
+              : "LOW RISK"
+          }
+        </div>
+
+      </div>
+    `;
+
     // =========================================
-    // LAYER 2 HTML
+    // LAYER 2 → Circular Confidence Meter
+    // =========================================
+
+    const layer2MeterHTML = `
+      <div class="risk-meter">
+
+        <div
+          class="circle"
+          style="
+            background: conic-gradient(
+              #00e5ff ${data.layer2.confidence * 3.6}deg,
+              rgba(255,255,255,0.08) 0deg
+            );
+          "
+        >
+          <div class="inner-circle">
+            ${data.layer2.confidence}%
+          </div>
+        </div>
+
+        <div class="risk-label">
+          ML CONFIDENCE
+        </div>
+
+      </div>
+    `;
+
+    // =========================================
+    // LAYER 2 → Feature Contributions
     // =========================================
 
     let contributionHTML = "";
@@ -117,31 +177,64 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       `;
     } else {
       data.layer2.contributions.forEach(item => {
-      const score = parseInt(item.impact.replace("+", ""));
+        const score = parseInt(item.impact.replace("+", ""));
 
-      contributionHTML += `
-        <div class="contribution-box">
+        contributionHTML += `
+          <div class="contribution-box">
 
-          <div class="contribution-top">
-            <span class="feature-name">${item.name}</span>
-            <span class="feature-score">${item.impact}</span>
-          </div>
-
-          <div class="bar-bg">
-            <div 
-              class="bar-fill"
-              style="width: ${score * 2}px;">
+            <div class="contribution-top">
+              <span class="feature-name">${item.name}</span>
+              <span class="feature-score">${item.impact}</span>
             </div>
-          </div>
 
-        </div>
-      `;
-    });
+            <div class="bar-bg">
+              <div
+                class="bar-fill"
+                style="width: ${Math.min(score * 2, 100)}%;">
+              </div>
+            </div>
+
+          </div>
+        `;
+      });
     }
 
     // =========================================
-    // LAYER 3 HTML
-    // Threat Type + Explainability
+    // LAYER 3 → Circular Severity Meter
+    // =========================================
+
+    const layer3MeterHTML = `
+      <div class="risk-meter">
+
+        <div
+          class="circle"
+          style="
+            background: conic-gradient(
+              #ff4fd8 ${
+                data.layer3.severity === "High"
+                  ? 300
+                  : data.layer3.severity === "Medium"
+                  ? 220
+                  : 120
+              }deg,
+              rgba(255,255,255,0.08) 0deg
+            );
+          "
+        >
+          <div class="inner-circle">
+            ${data.layer3.severity}
+          </div>
+        </div>
+
+        <div class="risk-label">
+          THREAT SEVERITY
+        </div>
+
+      </div>
+    `;
+
+    // =========================================
+    // LAYER 3 → Explanations
     // =========================================
 
     let explanationHTML = "";
@@ -162,7 +255,11 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       });
     }
 
-    let layer3HTML = "";
+    // =========================================
+    // LAYER 3 → Content Graphs
+    // =========================================
+
+    let layer3GraphHTML = "";
 
     const layer3Features = [
       {
@@ -193,7 +290,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
     ];
 
     layer3Features.forEach(item => {
-      layer3HTML += `
+      layer3GraphHTML += `
         <div class="contribution-box">
 
           <div class="contribution-top">
@@ -210,23 +307,23 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
 
         </div>
       `;
-});
+    });
 
-layer3HTML += `
-  <div class="row">
-    <span>Detected Brands</span>
-    <span>
-      ${
-        pageContent.detectedBrands.length > 0
-          ? pageContent.detectedBrands.join(", ")
-          : "None"
-      }
-    </span>
-  </div>
-`;
+    layer3GraphHTML += `
+      <div class="row">
+        <span>Detected Brands</span>
+        <span>
+          ${
+            pageContent.detectedBrands.length > 0
+              ? pageContent.detectedBrands.join(", ")
+              : "None"
+          }
+        </span>
+      </div>
+    `;
 
     // =========================================
-    // FINAL DASHBOARD UI
+    // FINAL UI
     // =========================================
 
     resultDiv.innerHTML = `
@@ -236,9 +333,7 @@ layer3HTML += `
         <div class="panel">
           <h2>Layer 1 - URL Analysis</h2>
 
-          <div class="main-score">
-            Risk Score: ${data.risk_score}
-          </div>
+          ${riskMeterHTML}
 
           ${layer1HTML}
         </div>
@@ -253,9 +348,7 @@ layer3HTML += `
             ${data.prediction}
           </div>
 
-          <div class="confidence">
-            Confidence: ${data.layer2.confidence}%
-          </div>
+          ${layer2MeterHTML}
 
           <h3>Feature Contributions</h3>
 
@@ -266,12 +359,25 @@ layer3HTML += `
         <div class="panel">
           <h2>Layer 3 - Content Analysis + Intent Reasoning</h2>
 
-          ${layer3HTML}
+          <div class="prediction ${
+            data.prediction === "Safe" ? "safe" : "phishing"
+          }">
+            ${data.layer3.threat_type}
+          </div>
+
+          ${layer3MeterHTML}
+
+          <h3>Why Flagged</h3>
+
+          ${explanationHTML}
+
+          <br>
+
+          ${layer3GraphHTML}
         </div>
 
       </div>
     `;
-
   } catch (error) {
     console.error(error);
 
