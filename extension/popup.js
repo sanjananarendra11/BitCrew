@@ -162,59 +162,68 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       });
     }
 
-    let layer3HTML = `
-      <div class="prediction ${
-        data.prediction === "Safe" ? "safe" : "phishing"
-      }">
-        ${data.layer3.threat_type}
-      </div>
+    let layer3HTML = "";
 
-      <div class="confidence">
-        Severity: ${data.layer3.severity}
-      </div>
+    const layer3Features = [
+      {
+        name: "Password Field",
+        value: pageContent.hasPasswordField ? 30 : 0,
+        display: pageContent.hasPasswordField ? "Yes" : "No"
+      },
+      {
+        name: "Forms Detected",
+        value: pageContent.formCount * 10,
+        display: pageContent.formCount
+      },
+      {
+        name: "Suspicious Words",
+        value: pageContent.suspiciousWords * 8,
+        display: pageContent.suspiciousWords
+      },
+      {
+        name: "External Form Action",
+        value: pageContent.hasExternalFormAction ? 35 : 0,
+        display: pageContent.hasExternalFormAction ? "Yes" : "No"
+      },
+      {
+        name: "Redirect Script",
+        value: pageContent.hasRedirectScript ? 20 : 0,
+        display: pageContent.hasRedirectScript ? "Yes" : "No"
+      }
+    ];
 
-      <h3>Why Flagged</h3>
+    layer3Features.forEach(item => {
+      layer3HTML += `
+        <div class="contribution-box">
 
-      ${explanationHTML}
+          <div class="contribution-top">
+            <span class="feature-name">${item.name}</span>
+            <span class="feature-score">${item.display}</span>
+          </div>
 
-      <br>
+          <div class="bar-bg">
+            <div
+              class="bar-fill"
+              style="width: ${Math.min(item.value * 2, 100)}%;">
+            </div>
+          </div>
 
-      <div class="row">
-        <span>Password Field</span>
-        <span>${pageContent.hasPasswordField ? "Yes" : "No"}</span>
-      </div>
+        </div>
+      `;
+});
 
-      <div class="row">
-        <span>Forms Detected</span>
-        <span>${pageContent.formCount}</span>
-      </div>
-
-      <div class="row">
-        <span>Suspicious Words</span>
-        <span>${pageContent.suspiciousWords}</span>
-      </div>
-
-      <div class="row">
-        <span>External Form Action</span>
-        <span>${pageContent.hasExternalFormAction ? "Yes" : "No"}</span>
-      </div>
-
-      <div class="row">
-        <span>Redirect Script</span>
-        <span>${pageContent.hasRedirectScript ? "Yes" : "No"}</span>
-      </div>
-
-      <div class="row">
-        <span>Detected Brands</span>
-        <span>
-          ${
-            pageContent.detectedBrands.length > 0
-              ? pageContent.detectedBrands.join(", ")
-              : "None"
-          }
-        </span>
-      </div>
-    `;
+layer3HTML += `
+  <div class="row">
+    <span>Detected Brands</span>
+    <span>
+      ${
+        pageContent.detectedBrands.length > 0
+          ? pageContent.detectedBrands.join(", ")
+          : "None"
+      }
+    </span>
+  </div>
+`;
 
     // =========================================
     // FINAL DASHBOARD UI
