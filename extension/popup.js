@@ -74,10 +74,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       return;
     }
 
-    // =========================================
     // Layer 1 HTML
-    // =========================================
-
     let layer1HTML = "";
 
     Object.entries(data.layer1).forEach(([key, value]) => {
@@ -89,10 +86,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       `;
     });
 
-    // =========================================
     // Layer 1 Circular Meter
-    // =========================================
-
     const riskMeterHTML = `
       <div class="risk-meter">
         <div
@@ -123,10 +117,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       </div>
     `;
 
-    // =========================================
     // Layer 2 Meter
-    // =========================================
-
     const layer2MeterHTML = `
       <div class="risk-meter">
         <div
@@ -149,10 +140,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       </div>
     `;
 
-    // =========================================
     // Layer 2 Contributions
-    // =========================================
-
     let contributionHTML = "";
 
     if (data.layer2.contributions.length === 0) {
@@ -183,10 +171,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       });
     }
 
-    // =========================================
     // Layer 3 Meter
-    // =========================================
-
     const layer3MeterHTML = `
       <div class="risk-meter">
         <div
@@ -215,10 +200,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       </div>
     `;
 
-    // =========================================
     // Layer 3 Explanations
-    // =========================================
-
     let explanationHTML = "";
 
     if (data.layer3.explanations.length === 0) {
@@ -237,10 +219,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       });
     }
 
-    // =========================================
     // Layer 3 Graphs
-    // =========================================
-
     let layer3GraphHTML = "";
 
     const layer3Features = [
@@ -302,10 +281,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       </div>
     `;
 
-    // =========================================
     // FINAL UI
-    // =========================================
-
     resultDiv.innerHTML = `
       <div class="dashboard">
 
@@ -367,8 +343,28 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
             }
           </div>
 
-          <div class="confidence">
-            Final Confidence: ${data.layer2.confidence}%
+          <div class="risk-meter">
+            <div
+              class="circle"
+              style="
+                background: conic-gradient(
+                  ${
+                    data.prediction === "Safe"
+                      ? "#00ff9d"
+                      : "#ff4fd8"
+                  } ${data.risk_score * 3.6}deg,
+                  rgba(255,255,255,0.08) 0deg
+                );
+              "
+            >
+              <div class="inner-circle">
+                ${data.layer2.confidence}%
+              </div>
+            </div>
+
+            <div class="risk-label">
+              FINAL CONFIDENCE
+            </div>
           </div>
 
           <div class="confidence">
