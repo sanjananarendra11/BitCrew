@@ -22,18 +22,10 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
   `;
 
   try {
-    // =========================================
-    // STEP 1 → Get current active tab
-    // =========================================
-
     const [tab] = await chrome.tabs.query({
       active: true,
       currentWindow: true
     });
-
-    // =========================================
-    // STEP 2 → Get Layer 3 content data
-    // =========================================
 
     let pageContent = {
       hasPasswordField: false,
@@ -60,12 +52,6 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       console.log("Content script unavailable:", err);
     }
 
-    console.log("Layer 3 Data:", pageContent);
-
-    // =========================================
-    // STEP 3 → Send URL + content data to Flask
-    // =========================================
-
     const response = await fetch("http://127.0.0.1:5000/predict", {
       method: "POST",
       headers: {
@@ -89,7 +75,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
     }
 
     // =========================================
-    // LAYER 1 → Circular Risk Meter
+    // Layer 1 HTML
     // =========================================
 
     let layer1HTML = "";
@@ -103,9 +89,12 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
       `;
     });
 
+    // =========================================
+    // Layer 1 Circular Meter
+    // =========================================
+
     const riskMeterHTML = `
       <div class="risk-meter">
-
         <div
           class="circle"
           style="
@@ -131,17 +120,15 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
               : "LOW RISK"
           }
         </div>
-
       </div>
     `;
 
     // =========================================
-    // LAYER 2 → Circular Confidence Meter
+    // Layer 2 Meter
     // =========================================
 
     const layer2MeterHTML = `
       <div class="risk-meter">
-
         <div
           class="circle"
           style="
@@ -159,12 +146,11 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
         <div class="risk-label">
           ML CONFIDENCE
         </div>
-
       </div>
     `;
 
     // =========================================
-    // LAYER 2 → Feature Contributions
+    // Layer 2 Contributions
     // =========================================
 
     let contributionHTML = "";
@@ -181,7 +167,6 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
 
         contributionHTML += `
           <div class="contribution-box">
-
             <div class="contribution-top">
               <span class="feature-name">${item.name}</span>
               <span class="feature-score">${item.impact}</span>
@@ -193,19 +178,17 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
                 style="width: ${Math.min(score * 2, 100)}%;">
               </div>
             </div>
-
           </div>
         `;
       });
     }
 
     // =========================================
-    // LAYER 3 → Circular Severity Meter
+    // Layer 3 Meter
     // =========================================
 
     const layer3MeterHTML = `
       <div class="risk-meter">
-
         <div
           class="circle"
           style="
@@ -229,12 +212,11 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
         <div class="risk-label">
           THREAT SEVERITY
         </div>
-
       </div>
     `;
 
     // =========================================
-    // LAYER 3 → Explanations
+    // Layer 3 Explanations
     // =========================================
 
     let explanationHTML = "";
@@ -256,7 +238,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
     }
 
     // =========================================
-    // LAYER 3 → Content Graphs
+    // Layer 3 Graphs
     // =========================================
 
     let layer3GraphHTML = "";
@@ -292,7 +274,6 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
     layer3Features.forEach(item => {
       layer3GraphHTML += `
         <div class="contribution-box">
-
           <div class="contribution-top">
             <span class="feature-name">${item.name}</span>
             <span class="feature-score">${item.display}</span>
@@ -304,7 +285,6 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
               style="width: ${Math.min(item.value * 2, 100)}%;">
             </div>
           </div>
-
         </div>
       `;
     });
@@ -332,9 +312,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
         <!-- Layer 1 -->
         <div class="panel">
           <h2>Layer 1 - URL Analysis</h2>
-
           ${riskMeterHTML}
-
           ${layer1HTML}
         </div>
 
@@ -351,7 +329,6 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
           ${layer2MeterHTML}
 
           <h3>Feature Contributions</h3>
-
           ${contributionHTML}
         </div>
 
@@ -368,7 +345,6 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
           ${layer3MeterHTML}
 
           <h3>Why Flagged</h3>
-
           ${explanationHTML}
 
           <br>
@@ -376,8 +352,55 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
           ${layer3GraphHTML}
         </div>
 
+        <!-- Final Security Verdict -->
+        <div class="panel final-verdict">
+
+          <h2>Final Security Verdict</h2>
+
+          <div class="prediction ${
+            data.prediction === "Safe" ? "safe" : "phishing"
+          }">
+            ${
+              data.prediction === "Safe"
+                ? "SAFE WEBSITE"
+                : "PHISHING DETECTED"
+            }
+          </div>
+
+          <div class="confidence">
+            Final Confidence: ${data.layer2.confidence}%
+          </div>
+
+          <div class="confidence">
+            Threat Level:
+            ${
+              data.risk_score >= 80
+                ? "CRITICAL"
+                : data.risk_score >= 60
+                ? "HIGH"
+                : data.risk_score >= 30
+                ? "MEDIUM"
+                : "LOW"
+            }
+          </div>
+
+          <h3>Main Reason</h3>
+
+          <div class="contribution">
+            <span>
+              ${
+                data.layer3.explanations.length > 0
+                  ? data.layer3.explanations[0]
+                  : "No major suspicious indicators detected"
+              }
+            </span>
+          </div>
+
+        </div>
+
       </div>
     `;
+
   } catch (error) {
     console.error(error);
 

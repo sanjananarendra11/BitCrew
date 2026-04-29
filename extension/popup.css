@@ -273,3 +273,17 @@ button:hover {
   color: #ff4fd8;
   letter-spacing: 1px;
 }
+
+/* ========================================
+   FINAL VERDICT PANEL
+======================================== */
+
+.final-verdict {
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 0 20px rgba(255, 79, 216, 0.08);
+}
+
+.final-verdict h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}

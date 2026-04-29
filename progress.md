@@ -295,3 +295,104 @@ This is a major upgrade in both:
 
 - Technical implementation
 - Visual presentation
+
+
+---
+
+# Final Security Verdict Added
+
+## New Final Decision Layer Implemented
+
+Added a final decision section after all three layers called:
+
+### Final Security Verdict
+
+This acts as the overall security conclusion of the system.
+
+Instead of users manually checking all three layers separately, the system now combines:
+
+- Layer 1 → URL Analysis
+- Layer 2 → Machine Learning Prediction
+- Layer 3 → Content Analysis + Intent Reasoning
+
+and produces one final decision.
+
+---
+
+## Final Verdict Output Includes
+
+### Website Status
+
+Displays:
+
+- SAFE WEBSITE
+- PHISHING DETTECTED
+
+based on overall multilayer analysis.
+
+### Final Confidence
+
+Shows final confidence percentage using ML confidence score.
+
+Example:
+
+Final Confidence: 92%
+
+### Threat Level
+
+Displays:
+
+- LOW
+- MEDIUM
+- HIGH
+- CRITICAL
+
+based on combined risk score from all layers.
+
+### Main Reason
+
+Shows the primary reason why the website was flagged.
+
+Examples:
+
+- Suspicious urgency language detected
+- Fake login page with password field found
+- Brand impersonation detected
+- External suspicious form action found
+
+This improves explainability and trust in the final result.
+
+---
+
+## Why This Improvement Is Important
+
+Most student projects stop at:
+
+Safe / Phishing
+
+But MAIPS now gives:
+
+### Complete Security Verdict
+
+This makes the project stronger because:
+
+- easier for users to understand
+- better real-world usability
+- stronger demo presentation
+- better viva explanation
+- more professional product behavior
+
+This makes the system feel like a real cybersecurity solution.
+
+---
+
+## Current Project Maturity
+
+System now includes:
+
+- 3 intelligent detection layers
+- Explainable AI
+- Circular visual meters
+- Graph-based feature analysis
+- Threat intent reasoning
+- Final security verdict
