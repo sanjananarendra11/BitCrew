@@ -133,6 +133,15 @@ def predict():
         if features[0] > 25:
             phishing_score += 5
 
+        if "icloud" in url.lower():
+            phishing_score += 30
+
+        if "paypal" in url.lower():
+            phishing_score += 30
+
+        if "bank" in url.lower():
+            phishing_score += 30
+
         # =========================================
         # FINAL PREDICTION
         # =========================================

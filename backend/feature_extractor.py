@@ -15,21 +15,29 @@ def entropy(s):
 def check_brand_spoof(url):
     url = url.lower()
 
-    brands = [
+    suspicious_brands = [
         "google",
         "paypal",
         "amazon",
         "facebook",
+        "microsoft",
         "apple",
         "icloud",
+        "gmail",
+        "instagram",
+        "netflix",
         "bank",
-        "microsoft"
+        "sbi",
+        "hdfc",
+        "icici",
+        "axis",
+        "whatsapp",
+        "telegram"
     ]
 
-    for brand in brands:
+    for brand in suspicious_brands:
         if brand in url:
-            if f"{brand}.com" not in url:
-                return 1
+            return 1
 
     return 0
 
